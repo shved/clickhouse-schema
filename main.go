@@ -1,3 +1,9 @@
+// TODO:
+// * make it work as a library along with executable
+// * add couple retries while connecting to database
+// * research output formats
+// * prettier table create statements
+
 package main
 
 import (
@@ -22,25 +28,55 @@ func main() {
 		os.Exit(0)
 	}
 
-	err := writeSchema(clickhouseUrlPtr, filePtr)
-	if err != nil {
-		log.Fatal(err)
-	}
+	writeSchema(clickhouseUrlPtr, filePtr)
 }
 
-func writeSchema(url *string, path *string) error {
+func writeSchema(url *string, path *string) {
 	db := connectToClickHouse(url)
 	defer db.Close()
+
+	fd, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	defer fd.Close()
+	if err != nil {
+		log.Fatalf("opening file: %v", err)
+	}
 
 	databases := getDatabases(db)
 
 	for _, dbName := range databases {
-		fmt.Println("DB:", dbName)
+		if dbName == "system" {
+			continue // skip system database
+		}
+		dbCreateStmt := dbCreateStmt(db, dbName)
+		fd.Write([]byte(dbCreateStmt + "\n\n"))
 		tables := getTables(db, dbName)
-		fmt.Println(tables)
+		for _, tableName := range tables {
+			tableCreateStmt := tableCreateStmt(db, dbName, tableName)
+			fd.Write([]byte(tableCreateStmt + "\n\n"))
+		}
+	}
+}
+
+func tableCreateStmt(db *sql.DB, dbName string, tableName string) string {
+	var createStmt string
+	queryStmt := fmt.Sprintf("SHOW CREATE TABLE %s.%s FORMAT PrettySpaceNoEscapes;", dbName, tableName)
+	err := db.QueryRow(queryStmt).Scan(&createStmt)
+	if err != nil {
+		log.Fatalf("getting table %s.%s statement: %v", dbName, tableName, err)
 	}
 
-	return nil
+	return createStmt
+}
+
+func dbCreateStmt(db *sql.DB, dbName string) string {
+	var createStmt string
+	queryStmt := fmt.Sprintf("SHOW CREATE DATABASE %s FORMAT TabSeparated;", dbName)
+	err := db.QueryRow(queryStmt).Scan(&createStmt)
+	if err != nil {
+		log.Fatalf("getting database %s statement: %v", dbName, err)
+	}
+
+	return createStmt
 }
 
 func getTables(db *sql.DB, dbName string) []string {
