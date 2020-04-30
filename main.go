@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"database/sql"
 	_ "github.com/ClickHouse/clickhouse-go"
@@ -51,7 +52,7 @@ func writeSchema(url *string, path *string, specifiedDB *string) {
 		fd.Write([]byte(dbCreateStmt + "\n\n"))
 		tables := getTables(db, dbName)
 		for _, tableName := range tables {
-			tableCreateStmt := tableCreateStmt(db, dbName, tableName)
+			tableCreateStmt := prettify(tableCreateStmt(db, dbName, tableName))
 			fd.Write([]byte(tableCreateStmt + "\n\n"))
 		}
 	}
@@ -123,6 +124,53 @@ func tableCreateStmt(db *sql.DB, dbName string, tableName string) string {
 	}
 
 	return createStmt
+}
+
+func prettify(s string) string {
+	var b strings.Builder
+
+	fields := strings.Fields(s)
+	var parenthesisStack uint8
+
+	for _, field := range fields {
+		switch {
+
+		case strings.HasPrefix(field, "("):
+			if parenthesisStack == 0 {
+				b.WriteString("\n\t")
+				b.WriteString("(")
+				b.WriteString("\n\t\t")
+				b.WriteString(field[1:])
+				b.WriteString(" ")
+				parenthesisStack = parenthesisStack + 1
+			}
+
+		case strings.HasSuffix(field, ")"):
+			if parenthesisStack == 1 {
+				b.WriteString(field[:len(field)-1])
+				b.WriteString("\n\t)")
+				parenthesisStack = parenthesisStack - 1
+			} else {
+				b.WriteString(field)
+				b.WriteString(" ")
+			}
+
+		case field == "ORDER" || field == "ENGINE" || field == "PARTITION" || field == "SETTINGS" || field == "FROM" || field == "SELECT":
+			b.WriteString("\n")
+			b.WriteString(field)
+			b.WriteString(" ")
+
+		case strings.HasSuffix(field, ","):
+			b.WriteString(field)
+			b.WriteString("\n\t\t")
+
+		default:
+			b.WriteString(field)
+			b.WriteString(" ")
+		}
+	}
+
+	return b.String()
 }
 
 func connectToClickHouse(url *string) *sql.DB {

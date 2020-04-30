@@ -17,5 +17,5 @@ TODO:
  - [ ] throw an error if the database not found
  - [ ] make it work as a library along with executable
  - [ ] add couple retries while connecting to database
- - [ ] research output formats
+ - [x] research output formats
  - [ ] prettier table create statements
