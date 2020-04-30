@@ -1,9 +1,3 @@
-// TODO:
-// * make it work as a library along with executable
-// * add couple retries while connecting to database
-// * research output formats
-// * prettier table create statements
-
 package main
 
 import (
@@ -20,6 +14,7 @@ func main() {
 	var helpPtr = flag.Bool("help", false, " Print usage")
 	var clickhouseUrlPtr = flag.String("url", "", " ClickHouse url with port, user and password if needed (clickhouse://your.host:9000?username=default&password=&x-multi-statement=true)")
 	var filePtr = flag.String("file", "schema.sql", " Output file with path")
+	var specifiedDB = flag.String("database", "", " Specify schema to be dumped. Otherwise dump all the DBs")
 
 	flag.Parse()
 
@@ -28,10 +23,10 @@ func main() {
 		os.Exit(0)
 	}
 
-	writeSchema(clickhouseUrlPtr, filePtr)
+	writeSchema(clickhouseUrlPtr, filePtr, specifiedDB)
 }
 
-func writeSchema(url *string, path *string) {
+func writeSchema(url *string, path *string, specifiedDB *string) {
 	db := connectToClickHouse(url)
 	defer db.Close()
 
@@ -41,7 +36,12 @@ func writeSchema(url *string, path *string) {
 		log.Fatalf("opening file: %v", err)
 	}
 
-	databases := getDatabases(db)
+	var databases []string
+	if *specifiedDB == "" {
+		databases = getDatabases(db)
+	} else {
+		databases = []string{*specifiedDB}
+	}
 
 	for _, dbName := range databases {
 		if dbName == "system" {
@@ -57,26 +57,27 @@ func writeSchema(url *string, path *string) {
 	}
 }
 
-func tableCreateStmt(db *sql.DB, dbName string, tableName string) string {
-	var createStmt string
-	queryStmt := fmt.Sprintf("SHOW CREATE TABLE %s.%s FORMAT PrettySpaceNoEscapes;", dbName, tableName)
-	err := db.QueryRow(queryStmt).Scan(&createStmt)
+func getDatabases(db *sql.DB) []string {
+	var databases []string
+	rows, err := db.Query("SHOW DATABASES FORMAT TabSeparated;")
 	if err != nil {
-		log.Fatalf("getting table %s.%s statement: %v", dbName, tableName, err)
+		log.Fatalf("getting databases: %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			log.Fatalf("getting databases: %v", err)
+		}
+		databases = append(databases, name)
 	}
 
-	return createStmt
-}
-
-func dbCreateStmt(db *sql.DB, dbName string) string {
-	var createStmt string
-	queryStmt := fmt.Sprintf("SHOW CREATE DATABASE %s FORMAT TabSeparated;", dbName)
-	err := db.QueryRow(queryStmt).Scan(&createStmt)
-	if err != nil {
-		log.Fatalf("getting database %s statement: %v", dbName, err)
+	if rows.Err(); err != nil {
+		log.Fatalf("getting databases: %v", err)
 	}
 
-	return createStmt
+	return databases
 }
 
 func getTables(db *sql.DB, dbName string) []string {
@@ -102,27 +103,26 @@ func getTables(db *sql.DB, dbName string) []string {
 	return tables
 }
 
-func getDatabases(db *sql.DB) []string {
-	var databases []string
-	rows, err := db.Query("SHOW DATABASES FORMAT TabSeparated;")
+func dbCreateStmt(db *sql.DB, dbName string) string {
+	var createStmt string
+	queryStmt := fmt.Sprintf("SHOW CREATE DATABASE %s FORMAT TabSeparated;", dbName)
+	err := db.QueryRow(queryStmt).Scan(&createStmt)
 	if err != nil {
-		log.Fatalf("getting databases: %v", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			log.Fatalf("getting databases: %v", err)
-		}
-		databases = append(databases, name)
+		log.Fatalf("getting database %s statement: %v", dbName, err)
 	}
 
-	if rows.Err(); err != nil {
-		log.Fatalf("getting databases: %v", err)
+	return createStmt
+}
+
+func tableCreateStmt(db *sql.DB, dbName string, tableName string) string {
+	var createStmt string
+	queryStmt := fmt.Sprintf("SHOW CREATE TABLE %s.%s FORMAT PrettySpaceNoEscapes;", dbName, tableName)
+	err := db.QueryRow(queryStmt).Scan(&createStmt)
+	if err != nil {
+		log.Fatalf("getting table %s.%s statement: %v", dbName, tableName, err)
 	}
 
-	return databases
+	return createStmt
 }
 
 func connectToClickHouse(url *string) *sql.DB {
