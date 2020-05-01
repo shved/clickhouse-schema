@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func Write(db *sql.DB, path *string, specifiedDB *string) {
+func Write(db *sql.DB, path *string, specifiedDB *string, raw *bool) {
 	fd, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	defer fd.Close()
 	if err != nil {
@@ -30,7 +30,10 @@ func Write(db *sql.DB, path *string, specifiedDB *string) {
 		fd.Write([]byte(dbCreateStmt + "\n\n"))
 		tables := getTables(db, dbName)
 		for _, tableName := range tables {
-			tableCreateStmt := prettify(tableCreateStmt(db, dbName, tableName))
+			tableCreateStmt := tableCreateStmt(db, dbName, tableName)
+			if !*raw {
+				tableCreateStmt = prettify(tableCreateStmt)
+			}
 			fd.Write([]byte(tableCreateStmt + "\n\n"))
 		}
 	}
@@ -113,26 +116,18 @@ func prettify(s string) string {
 	for _, field := range fields {
 		switch {
 
-		case strings.HasPrefix(field, "("):
-			if parenthesisStack == 0 && !afterOrderBy {
-				b.WriteString("\n\t")
-				b.WriteString("(")
-				b.WriteString("\n\t\t")
-				b.WriteString(field[1:])
-				b.WriteString(" ")
-				parenthesisStack = parenthesisStack + 1
-			} else {
-				writeDefault(&b, field)
-			}
+		case strings.HasPrefix(field, "(") && parenthesisStack == 0 && !afterOrderBy:
+			b.WriteString("\n\t")
+			b.WriteString("(")
+			b.WriteString("\n\t\t")
+			b.WriteString(field[1:])
+			b.WriteString(" ")
+			parenthesisStack = parenthesisStack + 1
 
-		case strings.HasSuffix(field, ")"):
-			if parenthesisStack == 1 {
-				b.WriteString(field[:len(field)-1])
-				b.WriteString("\n\t)")
-				parenthesisStack = parenthesisStack - 1
-			} else {
-				writeDefault(&b, field)
-			}
+		case strings.HasSuffix(field, ")") && parenthesisStack == 1:
+			b.WriteString(field[:len(field)-1])
+			b.WriteString("\n\t)")
+			parenthesisStack = parenthesisStack - 1
 
 		case field == "ORDER" || field == "ENGINE" || field == "PARTITION" || field == "SETTINGS" || field == "FROM" || field == "SELECT" || field == "GROUP":
 			b.WriteString("\n")
@@ -142,23 +137,15 @@ func prettify(s string) string {
 				afterOrderBy = true
 			}
 
-		case strings.HasSuffix(field, ","):
-			if !afterOrderBy {
-				b.WriteString(field)
-				b.WriteString("\n\t\t")
-			} else {
-				writeDefault(&b, field)
-			}
+		case strings.HasSuffix(field, ",") && !afterOrderBy:
+			b.WriteString(field)
+			b.WriteString("\n\t\t")
 
 		default:
-			writeDefault(&b, field)
+			b.WriteString(field)
+			b.WriteString(" ")
 		}
 	}
 
 	return b.String()
-}
-
-func writeDefault(b *strings.Builder, field string) {
-	b.WriteString(field)
-	b.WriteString(" ")
 }

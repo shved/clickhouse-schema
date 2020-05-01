@@ -12,22 +12,23 @@ import (
 )
 
 func main() {
-	var helpPtr = flag.Bool("help", false, " Print usage")
-	var clickhouseUrlPtr = flag.String("url", "", " ClickHouse url with port, user and password if needed (clickhouse://your.host:9000?username=default&password=&x-multi-statement=true)")
-	var filePtr = flag.String("file", "schema.sql", " Output file with path")
+	var help = flag.Bool("help", false, " Print usage")
+	var clickhouseUrl = flag.String("url", "", " ClickHouse url with port, user and password if needed (clickhouse://your.host:9000?username=default&password=&x-multi-statement=true)")
+	var file = flag.String("file", "schema.sql", " Output file with path")
 	var specifiedDB = flag.String("database", "", " Specify schema to be dumped. Otherwise dump all the DBs")
+	var raw = flag.Bool("raw", false, " Skip pretty sql formatting")
 
 	flag.Parse()
 
-	if *helpPtr || len(*clickhouseUrlPtr) < 1 {
+	if *help || len(*clickhouseUrl) < 1 {
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
 
-	db := connectToClickHouse(clickhouseUrlPtr)
+	db := connectToClickHouse(clickhouseUrl)
 	defer db.Close()
 
-	schema.Write(db, filePtr, specifiedDB)
+	schema.Write(db, file, specifiedDB, raw)
 }
 
 func connectToClickHouse(url *string) *sql.DB {
