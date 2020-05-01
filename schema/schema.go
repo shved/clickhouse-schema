@@ -1,36 +1,14 @@
-package main
+package schema
 
 import (
-	"flag"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"strings"
-
-	"database/sql"
-	_ "github.com/ClickHouse/clickhouse-go"
 )
 
-func main() {
-	var helpPtr = flag.Bool("help", false, " Print usage")
-	var clickhouseUrlPtr = flag.String("url", "", " ClickHouse url with port, user and password if needed (clickhouse://your.host:9000?username=default&password=&x-multi-statement=true)")
-	var filePtr = flag.String("file", "schema.sql", " Output file with path")
-	var specifiedDB = flag.String("database", "", " Specify schema to be dumped. Otherwise dump all the DBs")
-
-	flag.Parse()
-
-	if *helpPtr || len(*clickhouseUrlPtr) < 1 {
-		flag.PrintDefaults()
-		os.Exit(0)
-	}
-
-	writeSchema(clickhouseUrlPtr, filePtr, specifiedDB)
-}
-
-func writeSchema(url *string, path *string, specifiedDB *string) {
-	db := connectToClickHouse(url)
-	defer db.Close()
-
+func Write(db *sql.DB, path *string, specifiedDB *string) {
 	fd, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	defer fd.Close()
 	if err != nil {
@@ -183,17 +161,4 @@ func prettify(s string) string {
 func writeDefault(b *strings.Builder, field string) {
 	b.WriteString(field)
 	b.WriteString(" ")
-}
-
-func connectToClickHouse(url *string) *sql.DB {
-	db, err := sql.Open("clickhouse", *url)
-	if err != nil {
-		log.Fatalf("getting clickhouse connection: %v", err)
-	}
-
-	if _, err := db.Exec("SELECT 1"); err != nil {
-		log.Fatalf("trying to ping clickhouse: %v", err)
-	}
-
-	return db
 }

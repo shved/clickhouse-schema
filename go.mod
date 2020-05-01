@@ -1,4 +1,4 @@
-module chschema
+module github.com/shved/clickhouse-schema
 
 go 1.14
 
