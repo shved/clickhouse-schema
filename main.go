@@ -128,21 +128,23 @@ func tableCreateStmt(db *sql.DB, dbName string, tableName string) string {
 
 func prettify(s string) string {
 	var b strings.Builder
-
 	fields := strings.Fields(s)
 	var parenthesisStack uint8
+	var afterOrderBy bool
 
 	for _, field := range fields {
 		switch {
 
 		case strings.HasPrefix(field, "("):
-			if parenthesisStack == 0 {
+			if parenthesisStack == 0 && !afterOrderBy {
 				b.WriteString("\n\t")
 				b.WriteString("(")
 				b.WriteString("\n\t\t")
 				b.WriteString(field[1:])
 				b.WriteString(" ")
 				parenthesisStack = parenthesisStack + 1
+			} else {
+				writeDefault(&b, field)
 			}
 
 		case strings.HasSuffix(field, ")"):
@@ -151,26 +153,36 @@ func prettify(s string) string {
 				b.WriteString("\n\t)")
 				parenthesisStack = parenthesisStack - 1
 			} else {
-				b.WriteString(field)
-				b.WriteString(" ")
+				writeDefault(&b, field)
 			}
 
-		case field == "ORDER" || field == "ENGINE" || field == "PARTITION" || field == "SETTINGS" || field == "FROM" || field == "SELECT":
+		case field == "ORDER" || field == "ENGINE" || field == "PARTITION" || field == "SETTINGS" || field == "FROM" || field == "SELECT" || field == "GROUP":
 			b.WriteString("\n")
 			b.WriteString(field)
 			b.WriteString(" ")
+			if field == "ORDER" {
+				afterOrderBy = true
+			}
 
 		case strings.HasSuffix(field, ","):
-			b.WriteString(field)
-			b.WriteString("\n\t\t")
+			if !afterOrderBy {
+				b.WriteString(field)
+				b.WriteString("\n\t\t")
+			} else {
+				writeDefault(&b, field)
+			}
 
 		default:
-			b.WriteString(field)
-			b.WriteString(" ")
+			writeDefault(&b, field)
 		}
 	}
 
 	return b.String()
+}
+
+func writeDefault(b *strings.Builder, field string) {
+	b.WriteString(field)
+	b.WriteString(" ")
 }
 
 func connectToClickHouse(url *string) *sql.DB {

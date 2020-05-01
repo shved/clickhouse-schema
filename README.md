@@ -13,9 +13,12 @@ $ clickhouse-schema \
 ```
 
 TODO:
+ - [ ] add success messages
  - [x] option to choose only one database
  - [ ] throw an error if the database not found
  - [ ] make it work as a library along with executable
  - [ ] add couple retries while connecting to database
  - [x] research output formats
- - [ ] prettier table create statements
+ - [x] prettier table create statements
+ - [ ] make prettifier optional
+ - [ ] integration test with docker
