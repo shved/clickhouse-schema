@@ -28,7 +28,14 @@ func main() {
 	db := connectToClickHouse(clickhouseUrl)
 	defer db.Close()
 
-	schema.Write(db, file, specifiedDB, raw)
+	opts := schema.Options{
+		DB:          db,
+		Path:        file,
+		SpecifiedDB: specifiedDB,
+		Raw:         raw,
+	}
+
+	schema.Write(&opts)
 }
 
 func connectToClickHouse(url *string) *sql.DB {

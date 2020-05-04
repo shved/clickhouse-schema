@@ -8,30 +8,37 @@ import (
 	"strings"
 )
 
-func Write(db *sql.DB, path *string, specifiedDB *string, raw *bool) {
-	fd, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+type Options struct {
+	DB          *sql.DB
+	Path        *string
+	SpecifiedDB *string
+	Raw         *bool
+}
+
+func Write(opts *Options) {
+	fd, err := os.OpenFile(*opts.Path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	defer fd.Close()
 	if err != nil {
 		log.Fatalf("opening file: %v", err)
 	}
 
 	var databases []string
-	if *specifiedDB == "" {
-		databases = getDatabases(db)
+	if *opts.SpecifiedDB == "" {
+		databases = getDatabases(opts.DB)
 	} else {
-		databases = []string{*specifiedDB}
+		databases = []string{*opts.SpecifiedDB}
 	}
 
 	for _, dbName := range databases {
 		if dbName == "system" {
 			continue // skip system database
 		}
-		dbCreateStmt := dbCreateStmt(db, dbName)
+		dbCreateStmt := dbCreateStmt(opts.DB, dbName)
 		fd.Write([]byte(dbCreateStmt + "\n\n"))
-		tables := getTables(db, dbName)
+		tables := getTables(opts.DB, dbName)
 		for _, tableName := range tables {
-			tableCreateStmt := tableCreateStmt(db, dbName, tableName)
-			if !*raw {
+			tableCreateStmt := tableCreateStmt(opts.DB, dbName, tableName)
+			if !*opts.Raw {
 				tableCreateStmt = prettify(tableCreateStmt)
 			}
 			fd.Write([]byte(tableCreateStmt + "\n\n"))
