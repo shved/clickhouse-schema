@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -36,6 +37,8 @@ func main() {
 	}
 
 	schema.Write(&opts)
+
+	fmt.Printf("Schema successfully saved to %s\n", *file)
 }
 
 func connectToClickHouse(url *string) *sql.DB {

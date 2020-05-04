@@ -32,8 +32,8 @@ TODO:
 - [x] prettier table create statements
 - [x] research output formats
 - [x] make prettifier optional
-- [ ] pass options struct pointer instead of options list
-- [ ] add success messages
-- [ ] throw an error if the database not found
+- [x] pass options struct pointer instead of options list
+- [x] add success messages
+- [ ] throw an error if the database name not found (or it is `system` database)
 - [ ] add couple retries while connecting to database
 - [ ] integration test with docker
