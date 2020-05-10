@@ -3,13 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 
+	"github.com/shved/clickhouse-schema/db"
 	"github.com/shved/clickhouse-schema/schema"
-
-	"database/sql"
-	_ "github.com/ClickHouse/clickhouse-go"
 )
 
 func main() {
@@ -26,30 +23,17 @@ func main() {
 		os.Exit(0)
 	}
 
-	db := connectToClickHouse(clickhouseUrl)
-	defer db.Close()
+	conn := db.NewCHConn(clickhouseUrl)
+	defer conn.Close()
 
 	opts := schema.Options{
-		DB:          db,
-		Path:        file,
-		SpecifiedDB: specifiedDB,
-		Raw:         raw,
+		DB:          conn,
+		Path:        *file,
+		SpecifiedDB: *specifiedDB,
+		Raw:         *raw,
 	}
 
 	schema.Write(&opts)
 
 	fmt.Printf("Schema successfully saved to %s\n", *file)
-}
-
-func connectToClickHouse(url *string) *sql.DB {
-	db, err := sql.Open("clickhouse", *url)
-	if err != nil {
-		log.Fatalf("getting clickhouse connection: %v", err)
-	}
-
-	if _, err := db.Exec("SELECT 1"); err != nil {
-		log.Fatalf("trying to ping clickhouse: %v", err)
-	}
-
-	return db
 }

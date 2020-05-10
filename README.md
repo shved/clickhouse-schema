@@ -1,5 +1,7 @@
+# Overview
 ClickHouse schema dumper. It could be helpful if you want to generate pretty schema file to read and understand your database state. Can be used as a cli tool and a go library.  
 
+# Usage
 ```
 $ clickhouse-schema --help
 
@@ -18,14 +20,20 @@ import "github.com/shved/clickhouse-schema/schema"
 ...
 options = schema.Options{
 		DB:          db,          // *sql.DB
-		Path:        file,        // *string
-		SpecifiedDB: specifiedDB, // *string
-		Raw:         rawFlag,     // *bool
-
+		Path:        file,        // string
+		SpecifiedDB: specifiedDB, // string
+		Raw:         rawFlag,     // bool
 }
 schema.Write(&options)
 ```
 
+# Testing
+```
+docker-compose up
+go test ./...
+```
+
+---  
 TODO:
 - [x] option to choose only one database
 - [x] make it work as a library along with executable
@@ -34,6 +42,7 @@ TODO:
 - [x] make prettifier optional
 - [x] pass options struct pointer instead of options list
 - [x] add success messages
+- [x] integration test with docker
+- [ ] separate prettifier package
 - [ ] throw an error if the database name not found (or it is `system` database)
 - [ ] add couple retries while connecting to database
-- [ ] integration test with docker
