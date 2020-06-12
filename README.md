@@ -46,3 +46,4 @@ TODO:
 - [ ] separate prettifier package
 - [ ] throw an error if the database name not found (or it is `system` database)
 - [ ] add couple retries while connecting to database
+- [ ] add "describe table" format
