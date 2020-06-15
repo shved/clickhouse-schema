@@ -1,2 +1,2 @@
-schema.sql
+*.sql
 schema/test/test_schema.sql
