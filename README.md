@@ -46,4 +46,6 @@ TODO:
 - [ ] separate prettifier package
 - [ ] throw an error if the database name not found (or it is `system` database)
 - [ ] add couple retries while connecting to database
-- [ ] add "describe table" format
+- [ ] set cli default output to stdout
+- [ ] add MIT license
+- [ ] refactor with just enough architecture (https://blog.carlmjohnson.net/post/2020/go-cli-how-to-and-advice/)
