@@ -43,9 +43,10 @@ TODO:
 - [x] pass options struct pointer instead of options list
 - [x] add success messages
 - [x] integration test with docker
+- [x] add MIT license
+- [x] add couple retries while connecting to a database
 - [ ] separate prettifier package
-- [ ] throw an error if the database name not found (or it is `system` database)
-- [ ] add couple retries while connecting to database
-- [ ] set cli default output to stdout
-- [ ] add MIT license
+- [ ] remove every log.Fatal
 - [ ] refactor with just enough architecture (https://blog.carlmjohnson.net/post/2020/go-cli-how-to-and-advice/)
+- [ ] throw an error if the database name not found (or it is `system` database)
+- [ ] set cli default output to stdout

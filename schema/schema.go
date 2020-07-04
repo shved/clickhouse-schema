@@ -37,7 +37,7 @@ func Write(opts *Options) {
 		fd.Write([]byte(dbCreateStmt + "\n\n"))
 		tables := getTables(opts.DB, dbName)
 		for _, tableName := range tables {
-			tableCreateStmt := tableCreateStmt(opts.DB, dbName, tableName)
+			tableCreateStmt := fetchTableCreateStmt(opts.DB, dbName, tableName)
 			if !opts.Raw {
 				tableCreateStmt = prettify(tableCreateStmt)
 			}
@@ -103,7 +103,7 @@ func dbCreateStmt(db *sql.DB, dbName string) string {
 	return createStmt
 }
 
-func tableCreateStmt(db *sql.DB, dbName string, tableName string) string {
+func fetchTableCreateStmt(db *sql.DB, dbName string, tableName string) string {
 	var createStmt string
 	queryStmt := fmt.Sprintf("SHOW CREATE TABLE %s.%s FORMAT PrettySpaceNoEscapes;", dbName, tableName)
 	err := db.QueryRow(queryStmt).Scan(&createStmt)

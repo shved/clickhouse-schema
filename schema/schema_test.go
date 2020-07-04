@@ -12,7 +12,7 @@ import (
 func TestWrite(t *testing.T) {
 	testCH := "tcp://127.0.0.1:9000?debug=true"
 	testOutput := "test/test_schema.sql"
-	testSchema := "test/fixture_schema.sql"
+	fixtureSchema := "test/fixture_schema.sql"
 	testDB := "testdb"
 
 	conn := db.NewCHConn(&testCH)
@@ -23,7 +23,7 @@ func TestWrite(t *testing.T) {
 		log.Fatal("cleaning test database: ", err)
 	}
 
-	schema, err := ioutil.ReadFile(testSchema)
+	schema, err := ioutil.ReadFile(fixtureSchema)
 	if err != nil {
 		log.Fatal("reading fixture file: ", err)
 	}
