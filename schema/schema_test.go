@@ -10,7 +10,7 @@ import (
 )
 
 func TestWrite(t *testing.T) {
-	testCH := "tcp://127.0.0.1:9000?debug=true"
+	testCH := "tcp://127.0.0.1:9000"
 	testOutput := "test/test_schema.sql"
 	fixtureSchema := "test/fixture_schema.sql"
 	testDB := "testdb"

@@ -45,7 +45,7 @@ TODO:
 - [x] integration test with docker
 - [x] add MIT license
 - [x] add couple retries while connecting to a database
-- [ ] separate prettifier package
+- [x] separate prettifier package
 - [ ] remove every log.Fatal
 - [ ] refactor with just enough architecture (https://blog.carlmjohnson.net/post/2020/go-cli-how-to-and-advice/)
 - [ ] throw an error if the database name not found (or it is `system` database)
