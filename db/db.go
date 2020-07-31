@@ -2,17 +2,16 @@ package db
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"database/sql"
 	_ "github.com/ClickHouse/clickhouse-go"
 )
 
-func NewCHConn(url *string) *sql.DB {
+func NewCHConn(url *string) (*sql.DB, error) {
 	db, err := sql.Open("clickhouse", *url)
 	if err != nil {
-		log.Fatalf("getting clickhouse connection: %v", err)
+		return nil, fmt.Errorf("getting clickhouse connection: %v", err)
 	}
 
 	retry(3, time.Second, func() error {
@@ -22,10 +21,10 @@ func NewCHConn(url *string) *sql.DB {
 		return nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return db
+	return db, nil
 }
 
 // retry clickhouse connections, taken from https://upgear.io/blog/simple-golang-retry-function/ and slightly modified

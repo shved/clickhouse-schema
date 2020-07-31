@@ -21,8 +21,11 @@ func TestWrite(t *testing.T) {
 		log.Fatal("reading expected output file: ", err)
 	}
 
-	conn := db.NewCHConn(&testCH)
+	conn, err := db.NewCHConn(&testCH)
 	defer conn.Close()
+	if err != nil {
+		log.Fatal("connecting to the database: ", err)
+	}
 
 	_, err = conn.Exec("DROP DATABASE IF EXISTS testdb")
 	if err != nil {

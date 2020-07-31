@@ -22,8 +22,12 @@ func main() {
 		os.Exit(0)
 	}
 
-	conn := db.NewCHConn(clickhouseUrl)
+	conn, err := db.NewCHConn(clickhouseUrl)
 	defer conn.Close()
+	if err != nil {
+		fmt.Printf("Error connecting to the database: %v\n", err)
+		os.Exit(1)
+	}
 
 	opts := schema.Options{
 		DB:          conn,
@@ -31,7 +35,11 @@ func main() {
 		SpecifiedDB: *specifiedDB,
 	}
 
-	schema.Write(&opts)
+	err = schema.Write(&opts)
+	if err != nil {
+		fmt.Printf("Error writing schema: %v\n", err)
+		os.Exit(1)
+	}
 
 	fmt.Printf("Schema successfully saved to %s\n", *file)
 }
