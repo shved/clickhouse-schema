@@ -12,7 +12,6 @@ $ clickhouse-schema \
 $ clickhouse-schema \
   --url "clickhouse://your.host:9000?username=default&password=querty123&x-multi-statement=true" \
   --database "testdb" \
-  --raw
 ```
 or in your code
 ```
@@ -22,7 +21,6 @@ options = schema.Options{
 		DB:          db,          // *sql.DB
 		Path:        file,        // string
 		SpecifiedDB: specifiedDB, // string
-		Raw:         rawFlag,     // bool
 }
 schema.Write(&options)
 ```
@@ -46,6 +44,7 @@ TODO:
 - [x] add MIT license
 - [x] add couple retries while connecting to a database
 - [x] separate prettifier package
+- [x] remove prettifier since clickhouse client pretty format suddenly works :(
 - [ ] remove every log.Fatal
 - [ ] refactor with just enough architecture (https://blog.carlmjohnson.net/post/2020/go-cli-how-to-and-advice/)
 - [ ] throw an error if the database name not found (or it is `system` database)

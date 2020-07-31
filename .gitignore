@@ -1,2 +1,3 @@
 *.sql
-schema/test/test_schema.sql
+schema/test/test_output.sql
+schema.sql

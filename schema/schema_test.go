@@ -11,14 +11,20 @@ import (
 
 func TestWrite(t *testing.T) {
 	testCH := "tcp://127.0.0.1:9000"
-	testOutput := "test/test_schema.sql"
-	fixtureSchema := "test/fixture_schema.sql"
+	testOutput := "test/test_output.sql"
+	expectedOutput := "test/expected_output.sql"
+	fixtureSchema := "test/fixture_seed.sql"
 	testDB := "testdb"
+
+	expected, err := ioutil.ReadFile(expectedOutput)
+	if err != nil {
+		log.Fatal("reading expected output file: ", err)
+	}
 
 	conn := db.NewCHConn(&testCH)
 	defer conn.Close()
 
-	_, err := conn.Exec("DROP DATABASE IF EXISTS testdb")
+	_, err = conn.Exec("DROP DATABASE IF EXISTS testdb")
 	if err != nil {
 		log.Fatal("cleaning test database: ", err)
 	}
@@ -43,12 +49,10 @@ func TestWrite(t *testing.T) {
 		DB:          conn,
 		Path:        testOutput,
 		SpecifiedDB: testDB,
-		Raw:         true,
 	}
 
 	Write(&options)
 
-	expected := schema
 	given, err := ioutil.ReadFile(testOutput)
 	if err != nil {
 		log.Fatal("reading output schema file: ", err)

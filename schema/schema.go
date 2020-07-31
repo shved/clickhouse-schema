@@ -5,15 +5,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/shved/clickhouse-schema/prettifier"
 )
 
 type Options struct {
 	DB          *sql.DB
 	Path        string
 	SpecifiedDB string
-	Raw         bool
 }
 
 func Write(opts *Options) {
@@ -39,9 +36,6 @@ func Write(opts *Options) {
 		tables := getTables(opts.DB, dbName)
 		for _, tableName := range tables {
 			tableCreateStmt := fetchTableCreateStmt(opts.DB, dbName, tableName)
-			if !opts.Raw {
-				tableCreateStmt = prettifier.Prettify(tableCreateStmt)
-			}
 			fd.Write([]byte(tableCreateStmt + "\n\n"))
 		}
 	}
@@ -95,7 +89,7 @@ func getTables(db *sql.DB, dbName string) []string {
 
 func dbCreateStmt(db *sql.DB, dbName string) string {
 	var createStmt string
-	queryStmt := fmt.Sprintf("SHOW CREATE DATABASE %s FORMAT TabSeparated;", dbName)
+	queryStmt := fmt.Sprintf("SHOW CREATE DATABASE %s FORMAT PrettySpaceNoEscapes;", dbName)
 	err := db.QueryRow(queryStmt).Scan(&createStmt)
 	if err != nil {
 		log.Fatalf("getting database %s statement: %v", dbName, err)

@@ -14,7 +14,6 @@ func main() {
 	var clickhouseUrl = flag.String("url", "", " ClickHouse url with port, user and password if needed (clickhouse://your.host:9000?username=default&password=&x-multi-statement=true)")
 	var file = flag.String("file", "schema.sql", " Output file with path")
 	var specifiedDB = flag.String("database", "", " Specify schema to be dumped. Otherwise dump all the DBs")
-	var raw = flag.Bool("raw", false, " Skip pretty sql formatting")
 
 	flag.Parse()
 
@@ -30,7 +29,6 @@ func main() {
 		DB:          conn,
 		Path:        *file,
 		SpecifiedDB: *specifiedDB,
-		Raw:         *raw,
 	}
 
 	schema.Write(&opts)
