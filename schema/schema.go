@@ -20,24 +20,31 @@ func Write(opts *Options) error {
 	}
 
 	var databases []string
-	if opts.SpecifiedDB == "" {
+	sp := opts.SpecifiedDB
+	switch {
+	case sp == "":
 		databases, err = getDatabases(opts.DB)
 		if err != nil {
 			return err
 		}
-	} else {
+	case sp == "system":
+		return fmt.Errorf("%s is a special internal ClickHouse database and can't be specified", sp)
+	default:
 		databases = []string{opts.SpecifiedDB}
 	}
 
 	for _, dbName := range databases {
 		if dbName == "system" {
-			continue // skip system database
+			continue
 		}
 		dbCreateStmt, err := dbCreateStmt(opts.DB, dbName)
 		if err != nil {
 			return err
 		}
-		fd.Write([]byte(dbCreateStmt + "\n\n"))
+		_, err = fd.Write([]byte(dbCreateStmt + "\n\n"))
+		if err != nil {
+			return err
+		}
 		tables, err := getTables(opts.DB, dbName)
 		if err != nil {
 			return err
@@ -47,7 +54,10 @@ func Write(opts *Options) error {
 			if err != nil {
 				return err
 			}
-			fd.Write([]byte(tableCreateStmt + "\n\n"))
+			_, err = fd.Write([]byte(tableCreateStmt + "\n\n"))
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -90,7 +100,9 @@ func getTables(db *sql.DB, dbName string) ([]string, error) {
 		if err := rows.Scan(&name); err != nil {
 			return []string{}, fmt.Errorf("getting tables for %s: %v", dbName, err)
 		}
-		tables = append(tables, name)
+		if !(len(name) > 6 && name[:7] == ".inner.") {
+			tables = append(tables, name)
+		}
 	}
 
 	if rows.Err(); err != nil {

@@ -40,11 +40,11 @@ func TestWrite(t *testing.T) {
 	stmts := strings.Split(string(schema), "\n\n")
 	for _, stmt := range stmts {
 		if stmt == "" {
-			continue // skip
+			continue
 		}
 		_, err = conn.Exec(string(stmt))
 		if err != nil {
-			log.Fatal("filling the test db: ", err)
+			log.Fatal("seeding test db: ", err)
 		}
 	}
 
@@ -54,7 +54,10 @@ func TestWrite(t *testing.T) {
 		SpecifiedDB: testDB,
 	}
 
-	Write(&options)
+	err = Write(&options)
+	if err != nil {
+		t.Fatal("writing file:", err)
+	}
 
 	given, err := ioutil.ReadFile(testOutput)
 	if err != nil {
