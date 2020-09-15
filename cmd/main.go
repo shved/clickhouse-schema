@@ -10,10 +10,10 @@ import (
 )
 
 func main() {
-	var help = flag.Bool("help", false, " Print usage")
-	var clickhouseUrl = flag.String("url", "", " ClickHouse url with port, user and password if needed (clickhouse://your.host:9000?username=default&password=&x-multi-statement=true)")
-	var file = flag.String("file", "schema.sql", " Output file with path")
-	var specifiedDB = flag.String("database", "", " Specify schema to be dumped. Otherwise dump all the DBs")
+	var help = flag.Bool("help", false, "Print usage")
+	var clickhouseUrl = flag.String("url", "", "ClickHouse url with port, user and password if needed (clickhouse://your.host:9000?username=default&password=&x-multi-statement=true)")
+	var file = flag.String("file", "", "Output file path (writes to stdout if omited)")
+	var specifiedDB = flag.String("database", "", "Specify schema to be dumped, otherwise dump all the DBs except system")
 
 	flag.Parse()
 
@@ -41,5 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Schema successfully saved to %s\n", *file)
+	if len(opts.Path) > 0 {
+		fmt.Printf("Schema successfully saved to %s\n", *file)
+	}
 }

@@ -13,10 +13,16 @@ type Options struct {
 }
 
 func Write(opts *Options) error {
-	fd, err := os.OpenFile(opts.Path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	defer fd.Close()
-	if err != nil {
-		return fmt.Errorf("opening file: %v", err)
+	var fd *os.File
+	var err error
+	if len(opts.Path) > 0 {
+		fd, err = os.OpenFile(opts.Path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		defer fd.Close()
+		if err != nil {
+			return fmt.Errorf("opening file: %v", err)
+		}
+	} else {
+		fd = os.Stdout
 	}
 
 	var databases []string
@@ -25,7 +31,7 @@ func Write(opts *Options) error {
 	case sp == "":
 		databases, err = getDatabases(opts.DB)
 		if err != nil {
-			return err
+			return fmt.Errorf("getting databases: %v", err)
 		}
 	case sp == "system":
 		return fmt.Errorf("%s is a special internal ClickHouse database and can't be specified", sp)
@@ -43,7 +49,7 @@ func Write(opts *Options) error {
 		}
 		_, err = fd.Write([]byte(dbCreateStmt + "\n\n"))
 		if err != nil {
-			return err
+			return fmt.Errorf("writing database %s create statement: %v", dbName, err)
 		}
 		tables, err := getTables(opts.DB, dbName)
 		if err != nil {
@@ -56,7 +62,7 @@ func Write(opts *Options) error {
 			}
 			_, err = fd.Write([]byte(tableCreateStmt + "\n\n"))
 			if err != nil {
-				return err
+				return fmt.Errorf("writing table %s create statement: %v", tableName, err)
 			}
 		}
 	}
@@ -117,7 +123,7 @@ func dbCreateStmt(db *sql.DB, dbName string) (string, error) {
 	queryStmt := fmt.Sprintf("SHOW CREATE DATABASE %s FORMAT PrettySpaceNoEscapes;", dbName)
 	err := db.QueryRow(queryStmt).Scan(&createStmt)
 	if err != nil {
-		return "", fmt.Errorf("getting database %s statement: %v", dbName, err)
+		return "", fmt.Errorf("getting database %s create statement: %v", dbName, err)
 	}
 
 	return createStmt, nil
