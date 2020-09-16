@@ -25,18 +25,23 @@ func Write(opts *Options) error {
 		fd = os.Stdout
 	}
 
+	allDatabases, err := getDatabases(opts.DB)
+	if err != nil {
+		return fmt.Errorf("getting databases: %v", err)
+	}
+
 	var databases []string
-	sp := opts.SpecifiedDB
-	switch {
-	case sp == "":
-		databases, err = getDatabases(opts.DB)
-		if err != nil {
-			return fmt.Errorf("getting databases: %v", err)
-		}
-	case sp == "system":
-		return fmt.Errorf("%s is a special internal ClickHouse database and can't be specified", sp)
+	switch opts.SpecifiedDB {
+	case "":
+		databases = allDatabases
+	case "system":
+		return fmt.Errorf("'%s' is a special internal ClickHouse database and can't be specified", opts.SpecifiedDB)
 	default:
-		databases = []string{opts.SpecifiedDB}
+		if includes(allDatabases, opts.SpecifiedDB) {
+			databases = []string{opts.SpecifiedDB}
+		} else {
+			return fmt.Errorf("specified database '%s' doesnt exist", opts.SpecifiedDB)
+		}
 	}
 
 	for _, dbName := range databases {
@@ -49,7 +54,7 @@ func Write(opts *Options) error {
 		}
 		_, err = fd.Write([]byte(dbCreateStmt + "\n\n"))
 		if err != nil {
-			return fmt.Errorf("writing database %s create statement: %v", dbName, err)
+			return fmt.Errorf("writing database '%s' create statement: %v", dbName, err)
 		}
 		tables, err := getTables(opts.DB, dbName)
 		if err != nil {
@@ -62,7 +67,7 @@ func Write(opts *Options) error {
 			}
 			_, err = fd.Write([]byte(tableCreateStmt + "\n\n"))
 			if err != nil {
-				return fmt.Errorf("writing table %s create statement: %v", tableName, err)
+				return fmt.Errorf("writing table '%s' create statement: %v", tableName, err)
 			}
 		}
 	}
@@ -97,14 +102,14 @@ func getTables(db *sql.DB, dbName string) ([]string, error) {
 	var tables []string
 	rows, err := db.Query("SELECT name FROM system.tables WHERE database = ?;", dbName)
 	if err != nil {
-		return []string{}, fmt.Errorf("getting tables for %s: %v", dbName, err)
+		return []string{}, fmt.Errorf("getting tables for '%s': %v", dbName, err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var name string
 		if err := rows.Scan(&name); err != nil {
-			return []string{}, fmt.Errorf("getting tables for %s: %v", dbName, err)
+			return []string{}, fmt.Errorf("getting tables for '%s': %v", dbName, err)
 		}
 		if !(len(name) > 6 && name[:7] == ".inner.") {
 			tables = append(tables, name)
@@ -112,7 +117,7 @@ func getTables(db *sql.DB, dbName string) ([]string, error) {
 	}
 
 	if rows.Err(); err != nil {
-		return []string{}, fmt.Errorf("getting tables for %s: %v", dbName, err)
+		return []string{}, fmt.Errorf("getting tables for '%s': %v", dbName, err)
 	}
 
 	return tables, nil
@@ -134,8 +139,18 @@ func fetchTableCreateStmt(db *sql.DB, dbName string, tableName string) (string, 
 	queryStmt := fmt.Sprintf("SHOW CREATE TABLE %s.%s FORMAT PrettySpaceNoEscapes;", dbName, tableName)
 	err := db.QueryRow(queryStmt).Scan(&createStmt)
 	if err != nil {
-		return "", fmt.Errorf("getting table %s.%s statement: %v", dbName, tableName, err)
+		return "", fmt.Errorf("getting table '%s.%s' statement: %v", dbName, tableName, err)
 	}
 
 	return createStmt, nil
+}
+
+func includes(strs []string, str string) bool {
+	for _, s := range strs {
+		if s == str {
+			return true
+		}
+	}
+
+	return false
 }

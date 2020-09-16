@@ -48,15 +48,23 @@ func TestWrite(t *testing.T) {
 		}
 	}
 
+	// test with system db specified
 	options := Options{
 		DB:          conn,
 		Path:        testOutput,
-		SpecifiedDB: testDB,
+		SpecifiedDB: "system",
 	}
 
 	err = Write(&options)
+	if err == nil {
+		t.Fatal("when system database specified schema.Write should return error")
+	}
+
+	// test with regular db specified
+	options.SpecifiedDB = testDB
+	err = Write(&options)
 	if err != nil {
-		t.Fatal("writing file:", err)
+		log.Fatal("writing file:", err)
 	}
 
 	given, err := ioutil.ReadFile(testOutput)

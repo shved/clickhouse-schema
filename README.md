@@ -47,5 +47,5 @@ TODO:
 - [x] remove prettifier since clickhouse client pretty format suddenly works :(
 - [x] remove every log.Fatal
 - [x] set cli default output to stdout
-- [ ] throw an error if the database name not found (or it is `system` database)
+- [x] throw an error if the database name not found (or it is `system` database)
 - [ ] refactor with just enough architecture (https://blog.carlmjohnson.net/post/2020/go-cli-how-to-and-advice/)
